@@ -3,11 +3,13 @@
 @export var camara: Camera3D
 @export var speed_caminar = 3.0
 @export var speed_correr = 5.2
+@export var tiempo_arranque = 0.30
 @onready var anim = $Modelo/AnimationPlayer
 
 var multiplicador = 1.0
 var empuje = Vector3.ZERO
 var accion = ""
+var avance = Vector3.ZERO
 
 func _ready():
 	if camara == null:
@@ -26,16 +28,21 @@ func _physics_process(delta):
 	var corre = Input.is_action_pressed("correr")
 	var speed = speed_correr if corre else speed_caminar
 
-	velocity.x = direction.x * speed * multiplicador + empuje.x
-	velocity.z = direction.z * speed * multiplicador + empuje.z
+	var objetivo = direction * speed * multiplicador
+	var paso = speed / tiempo_arranque * delta
+	avance = avance.move_toward(objetivo, paso)
+
+	velocity.x = avance.x + empuje.x
+	velocity.z = avance.z + empuje.z
 
 	if direction.length() > 0:
 		basis = Basis.looking_at(direction)
 
 	move_and_slide()
 
-	if velocity.length() > 0.1:
-		if corre:
+	var rapidez = Vector2(velocity.x, velocity.z).length()
+	if rapidez > 0.1:
+		if rapidez > speed_caminar + 0.1:
 			anim.play("sprint")
 		else:
 			anim.play("walk")

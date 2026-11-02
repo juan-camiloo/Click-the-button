@@ -1,5 +1,8 @@
 ﻿extends CharacterBody3D
 
+enum Estado { QUIETO, CAMINAR, CORRER, AIRE }
+const RUIDO = [0.0, 1.2, 4.5, 0.0]
+
 @export var camara: Camera3D
 @export var speed_caminar = 3.0
 @export var speed_correr = 5.2
@@ -10,6 +13,9 @@ var multiplicador = 1.0
 var empuje = Vector3.ZERO
 var accion = ""
 var avance = Vector3.ZERO
+
+var estado = Estado.QUIETO
+var ruido = 0.0
 
 func _ready():
 	if camara == null:
@@ -40,11 +46,29 @@ func _physics_process(delta):
 
 	move_and_slide()
 
+	var antes = estado
+	estado = elegir_estado()
+	ruido = RUIDO[estado]
+	if estado != antes:
+		print("estado ", Estado.keys()[estado], " Â· ruido ", ruido, " m")
+	animar()
+
+func elegir_estado():
+	if not is_on_floor():
+		return Estado.AIRE
 	var rapidez = Vector2(velocity.x, velocity.z).length()
-	if rapidez > 0.1:
-		if rapidez > speed_caminar + 0.1:
-			anim.play("sprint")
-		else:
-			anim.play("walk")
-	else:
-		anim.play("idle")
+	if rapidez < 0.1:
+		return Estado.QUIETO
+	if rapidez > speed_caminar + 0.1:
+		return Estado.CORRER
+	return Estado.CAMINAR
+
+func animar():
+	if accion != "":
+		anim.play(accion)
+		return
+	match estado:
+		Estado.QUIETO: anim.play("idle")
+		Estado.CAMINAR: anim.play("walk")
+		Estado.CORRER: anim.play("sprint")
+		Estado.AIRE: anim.play("fall")

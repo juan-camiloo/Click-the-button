@@ -1,0 +1,4 @@
+.godot/
+*.tmp
+*.docx
+generar_documentos.py
